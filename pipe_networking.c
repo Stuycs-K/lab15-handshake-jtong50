@@ -76,7 +76,6 @@ int server_handshake(int *to_client) {
     err(); 
   }
   printf("Server: Wrote SYN_ACK %d to client\n", x);
-  sleep(1); 
 
   //reading ACK from PP/client
   int val; 
@@ -85,7 +84,7 @@ int server_handshake(int *to_client) {
     printf("Server: Failed to read ACK from client"); 
     err(); 
   }
-  printf("Server: Recieved ACK from client: %d -- SUCCESS!", val);
+  printf("Server: Recieved ACK from client: %d -- SUCCESS!\n", val);
   return from_client;
 }
 
