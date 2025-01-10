@@ -69,13 +69,14 @@ int server_handshake(int *to_client) {
 
   //writing SYN_ACK to PP/client
   srand(time(NULL)); 
-  int numm = rand();
-  int w_bytes = write(*to_client, &numm, sizeof(int)); 
+  int x = rand() % 100;
+  int w_bytes = write(*to_client, &x, sizeof(int)); 
   if (w_bytes == -1){
     printf("Server: Failed to write to client: "); 
     err(); 
   }
-  printf("Server: Wrote SYN_ACK %d to client\n", numm);
+  printf("Server: Wrote SYN_ACK %d to client\n", x);
+  sleep(1); 
 
   //reading ACK from PP/client
   int val; 
@@ -144,7 +145,7 @@ int client_handshake(int *to_server) {
     printf("Client: Failed to read SYN_ACK: "); 
     err(); 
   }
-  printf("Client: Read SYN_ACK %d\n", num);
+  printf("Client: Server sent number %d\n", num);
 
   //write ACK to WKP 
   num++; 
