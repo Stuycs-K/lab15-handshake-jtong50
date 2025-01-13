@@ -11,14 +11,23 @@ int main() {
   int to_client;
   int from_client;
   while(1){
-    from_client = server_handshake( &to_client );
-    if (close(from_client) == -1){
-        perror("failed to close from_client"); 
+    from_client = server_setup();
+    pid_t p1 = fork(); 
+    if (p1 < 0){
+        perror("forkfail"); 
+        exit(1);
     }
-    if (close(to_client) == -1){
-        perror("failed to close to_client");
+    else if (p1 == 0){
+        server_handshake_half(&to_client, from_client);
+        if (close(from_client) == -1){
+            perror("failed to close from_client"); 
+        }
+        if (close(to_client) == -1){
+            perror("failed to close to_client");
+        }
+        signal(SIGINT, sighandler); 
+        exit(0);
     }
-    signal(SIGINT, sighandler); 
   }
   
 }

@@ -29,13 +29,13 @@ int server_setup() {
     printf("Failed to open WKP: ");
     err(); 
   }
-  printf("Server: Opened WKP\n"); 
+  //printf("Server: Opened WKP\n"); 
   int rem_fifo = remove(fifoname);
   if (rem_fifo == -1){
     printf("Failed to remove WKP: ");
     err(); 
   }
-  printf("Server: Removed WKP\n");
+  //printf("Server: Removed WKP\n");
   return from_client;
 }
 
@@ -54,26 +54,31 @@ int server_handshake_half(int *to_client, int from_client){
     printf("Server: Failed to open private pipe: "); 
     err(); 
   }
-  printf("Server: Opened PP\n");
+  //printf("Server: Opened PP\n");
 
   //writing SYN_ACK to PP/client
-  srand(time(NULL)); 
-  int x = rand() % 100;
-  int w_bytes = write(*to_client, &x, sizeof(int)); 
-  if (w_bytes == -1){
-    printf("Server: Failed to write to client: "); 
-    err(); 
-  }
-  printf("Server: Wrote SYN_ACK %d to client\n", x);
+  while(1){
+    srand(time(NULL)); 
+    int x = rand() % 100;
+    int w_bytes = write(*to_client, &x, sizeof(int)); 
+    sleep(1);
+    if (w_bytes == -1){
+      printf("Server: Failed to write to client: "); 
+      err(); 
+    }
+    printf("Server: Wrote SYN_ACK %d to client\n", x);
 
   //reading ACK from PP/client
   int val; 
   int rr_bytes = read(from_client, &val, sizeof(int)); 
+  sleep(1);
   if (rr_bytes == -1){
     printf("Server: Failed to read ACK from client"); 
     err(); 
   }
+
   printf("Server: Recieved ACK from client: %d -- SUCCESS!\n", val);
+  }
   return from_client;
 }
 
@@ -86,18 +91,45 @@ int server_handshake_half(int *to_client, int from_client){
 
   returns the file descriptor for the upstream pipe (see server setup).
   =========================*/
-int server_handshake(int *to_client) {
-  int from_client = server_setup(); 
-  pid_t p1 = fork(); 
-  if (p1 < 0){
-    perror("forkfail"); 
-    exit(1);
-  }
-  else if (p1 == 0){
-    server_handshake_half(to_client, from_client);
-  }
-  return from_client;
-}
+// int server_handshake(int *to_client) {
+//   int from_client = server_setup(); 
+//   //reading SYN (PP Name) from WKP
+//   char privpipe[255];
+//   int r_bytes = read(from_client, privpipe, 255); 
+//   if (r_bytes == -1){
+//     printf("Server: Failed to read from client: "); 
+//     err(); 
+//   }
+//   printf("Server: Read following SYN from client: %s\n", privpipe); 
+
+//   //opening PP 
+//   *to_client = open(privpipe, O_WRONLY, 0666);
+//   if (*to_client == -1){
+//     printf("Server: Failed to open private pipe: "); 
+//     err(); 
+//   }
+//   printf("Server: Opened PP\n");
+
+//   //writing SYN_ACK to PP/client
+//   srand(time(NULL)); 
+//   int x = rand() % 100;
+//   int w_bytes = write(*to_client, &x, sizeof(int)); 
+//   if (w_bytes == -1){
+//     printf("Server: Failed to write to client: "); 
+//     err(); 
+//   }
+//   printf("Server: Wrote SYN_ACK %d to client\n", x);
+
+//   //reading ACK from PP/client
+//   int val; 
+//   int rr_bytes = read(from_client, &val, sizeof(int)); 
+//   if (rr_bytes == -1){
+//     printf("Server: Failed to read ACK from client"); 
+//     err(); 
+//   }
+//   printf("Server: Recieved ACK from client: %d -- SUCCESS!\n", val);
+//   return from_client;
+// }
 
 
 /*=========================
@@ -116,13 +148,13 @@ int client_handshake(int *to_server) {
     printf("Client: Failed to open WKP: "); 
     err(); 
   }
-  printf("Client: Opened WKP, unblocked server\n");
+  //printf("Client: Opened WKP, unblocked server\n");
 
   //creating PP
   char privpipe[30];
   sprintf(privpipe, "%d", getpid()); 
   mkfifo(privpipe, 0666); 
-  printf("Client: Created PP\n"); 
+  //printf("Client: Created PP\n"); 
 
   //write SYN to WKP
   int w_bytes = write(*to_server, privpipe, 29); 
@@ -138,7 +170,7 @@ int client_handshake(int *to_server) {
     printf("Client: Failed to open PP"); 
     err(); 
   }
-  printf("Client: Opened PP, blocks PP\n");
+  //printf("Client: Opened PP, blocks PP\n");
 
   //remove PP
   int rem_pipe = remove(privpipe);
@@ -146,25 +178,27 @@ int client_handshake(int *to_server) {
     printf("Client: Failed to remove pipe: "); 
     err(); 
   }
-  printf("Client: Removed PP\n");
+  //printf("Client: Removed PP\n");
 
   // read SYN_ACK from PP sent by server
-  int num; 
-  int r_bytes = read(from_server, &num, sizeof(int));
-  if (r_bytes == -1){
-    printf("Client: Failed to read SYN_ACK: "); 
-    err(); 
-  }
-  printf("Client: Server sent number %d\n", num);
+  while(1){
+    int num; 
+    int r_bytes = read(from_server, &num, sizeof(int));
+    if (r_bytes == -1){
+      printf("Client: Failed to read SYN_ACK: "); 
+      err(); 
+    }
+    printf("Client: Server sent number %d\n", num);
 
-  //write ACK to WKP 
-  num++; 
-  int ww_bytes = write(*to_server, &num, sizeof(int)); 
-  if (ww_bytes == -1){
-    printf("Client: Failed to write ACK to server: "); 
-    err();
+    //write ACK to WKP 
+    num++; 
+    int ww_bytes = write(*to_server, &num, sizeof(int)); 
+    if (ww_bytes == -1){
+      printf("Client: Failed to write ACK to server: "); 
+      err();
+    }
+    printf("Client: Wrote ACK %d to server\n", num);
   }
-  printf("Client: Wrote ACK %d to server\n", num);
 
   return from_server;
 }
