@@ -39,18 +39,7 @@ int server_setup() {
   return from_client;
 }
 
-/*=========================
-  server_handshake 
-  args: int * to_client
-
-  Performs the server side pipe 3 way handshake.
-  Sets *to_client to the file descriptor to the downstream pipe (Client's private pipe).
-
-  returns the file descriptor for the upstream pipe (see server setup).
-  =========================*/
-int server_handshake(int *to_client) {
-  int from_client = server_setup(); 
-  //reading SYN (PP Name) from WKP
+int server_handshake_half(int *to_client, int from_client){
   char privpipe[255];
   int r_bytes = read(from_client, privpipe, 255); 
   if (r_bytes == -1){
@@ -85,6 +74,28 @@ int server_handshake(int *to_client) {
     err(); 
   }
   printf("Server: Recieved ACK from client: %d -- SUCCESS!\n", val);
+  return from_client;
+}
+
+/*=========================
+  server_handshake 
+  args: int * to_client
+
+  Performs the server side pipe 3 way handshake.
+  Sets *to_client to the file descriptor to the downstream pipe (Client's private pipe).
+
+  returns the file descriptor for the upstream pipe (see server setup).
+  =========================*/
+int server_handshake(int *to_client) {
+  int from_client = server_setup(); 
+  pid_t p1 = fork(); 
+  if (p1 < 0){
+    perror("forkfail"); 
+    exit(1);
+  }
+  else if (p1 == 0){
+    server_handshake_half(to_client, from_client);
+  }
   return from_client;
 }
 
