@@ -58,15 +58,17 @@ int server_handshake_half(int *to_client, int from_client){
 
   //writing SYN_ACK to PP/client
   while(1){
-    srand(time(NULL)); 
-    int x = rand() % 100;
-    int w_bytes = write(*to_client, &x, sizeof(int)); 
+    int num; 
+    int r_file = open("/dev/random", O_RDONLY, 0);
+    int r_bytes = read(r_file, &num, 4);
+    num = num % 100; 
+    int w_bytes = write(*to_client, &num, sizeof(int)); 
     sleep(1);
     if (w_bytes == -1){
       printf("Server: Failed to write to client: "); 
       err(); 
     }
-    printf("Server: Wrote SYN_ACK %d to client\n", x);
+    printf("Server: Wrote SYN_ACK %d to client\n", num);
 
   //reading ACK from PP/client
   int val; 
